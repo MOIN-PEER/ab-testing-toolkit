@@ -1,0 +1,125 @@
+{
+  "plan": {
+    "baseline_conversion": 0.032,
+    "mde_relative": 0.1,
+    "alpha": 0.05,
+    "power": 0.8,
+    "n_per_group": 49774,
+    "daily_visitors": 7143,
+    "duration_days": 14
+  },
+  "experiments": {
+    "checkout_redesign": {
+      "decision": "SHIP",
+      "reason": "Conversion rate up +9.4% (95% CI +0.0008326 to +0.005356, p = 0.00732); guardrails fine.",
+      "rel_change_pct": 9.4,
+      "p_value": 0.007320629473548273,
+      "srm_p": 0.10407507380526108,
+      "srm_share_t": 0.49743,
+      "p_better": 0.996315
+    },
+    "free_delivery_30": {
+      "decision": "NO MEANINGFUL EFFECT",
+      "reason": "Not significant, and the 95% CI rules out a lift as large as the one we planned for. A smaller lift cannot be excluded, but it would not justify the change on its own.",
+      "rel_change_pct": 1.58,
+      "p_value": 0.6430558240934792,
+      "srm_p": 0.8943391678289574,
+      "srm_share_t": 0.49979,
+      "p_better": 0.67848
+    },
+    "recommendations_widget": {
+      "decision": "INCONCLUSIVE",
+      "reason": "Not significant (p = 0.12); the 95% CI (-0.0004633 to +0.003969) still includes effects worth having. Do not ship on this evidence.",
+      "rel_change_pct": 5.45,
+      "p_value": 0.12105964573396918,
+      "srm_p": 0.30855754483886255,
+      "srm_share_t": 0.49839,
+      "p_better": 0.94003
+    },
+    "unit_price_display": {
+      "decision": "INVESTIGATE",
+      "reason": "Sample ratio mismatch: treatment got 49.1% of users instead of 50% (p = 1.5e-08). Fix tracking and re-run; do not use this result.",
+      "rel_change_pct": 9.57,
+      "p_value": 0.006951403851069152,
+      "srm_p": 1.480305245670227e-08,
+      "srm_share_t": 0.49095857457392156,
+      "p_better": 0.99646
+    },
+    "email_subject_line": {
+      "decision": "SHIP",
+      "reason": "30-day spend (\u00a3), CUPED up +2.3% (95% CI +0.2365 to +0.8031, p = 0.000324); guardrails fine.",
+      "rel_change_pct": 2.29,
+      "p_value": 0.00032354201176797723,
+      "srm_p": 0.5551906495069298,
+      "srm_share_t": 0.498525
+    }
+  },
+  "cuped": {
+    "raw_effect": 0.9191864218948389,
+    "raw_ci": [
+      0.44180378055748964,
+      1.396569063232188
+    ],
+    "cuped_effect": 0.5197975292391455,
+    "cuped_ci": [
+      0.23647815304360442,
+      0.8031169054346865
+    ],
+    "variance_reduction": 0.6477116224359349,
+    "ci_width_reduction": 0.40651512714864424,
+    "pre_period_diff": 0.47073249702455655,
+    "pre_period_p": 0.041643764064169475,
+    "true_effect": 0.6
+  },
+  "peeking": {
+    "looks": 14,
+    "n_per_look_per_group": 3500,
+    "lift": 0.0,
+    "sims": 4000,
+    "peek_every_day_rate": 0.21625,
+    "single_final_look_rate": 0.04875,
+    "group_sequential_rate": 0.04775,
+    "group_sequential_avg_stop_day": 13.8725
+  },
+  "peeking_with_effect": {
+    "looks": 14,
+    "n_per_look_per_group": 3500,
+    "lift": 0.1,
+    "sims": 4000,
+    "peek_every_day_rate": 0.8745,
+    "single_final_look_rate": 0.791,
+    "group_sequential_rate": 0.77425,
+    "group_sequential_avg_stop_day": 10.71675
+  },
+  "aa_false_positive_rate": 0.0515,
+  "widget_segments": [
+    {
+      "segment": "desktop / new",
+      "rel_diff": 0.032725837875163394,
+      "p_value": 0.6867551736307158,
+      "p_holm": 1.0,
+      "p_bh": 0.9486287758594826
+    },
+    {
+      "segment": "desktop / returning",
+      "rel_diff": 0.02037197323143816,
+      "p_value": 0.7380157514839065,
+      "p_holm": 1.0,
+      "p_bh": 0.9486287758594826
+    },
+    {
+      "segment": "mobile / new",
+      "rel_diff": 0.1936048838984577,
+      "p_value": 0.02031903930414285,
+      "p_holm": 0.0812761572165714,
+      "p_bh": 0.0812761572165714
+    },
+    {
+      "segment": "mobile / returning",
+      "rel_diff": 0.004020991386035428,
+      "p_value": 0.9486287758594826,
+      "p_holm": 1.0,
+      "p_bh": 0.9486287758594826
+    }
+  ]
+}

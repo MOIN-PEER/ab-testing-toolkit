@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A/B Test Calculator</title>
+<style>
+:root { --bg:#f4f6f8; --card:#fff; --ink:#15212e; --muted:#5a6876; --line:#d6dde3; --acc:#2e6f9e; --good:#1e8449; --bad:#c0392b; --warn:#b9770e; }
+@media (prefers-color-scheme: dark) { :root { --bg:#0f161d; --card:#17212b; --ink:#e3eaf0; --muted:#9aaab8; --line:#2b3a47; --acc:#6fb1de; --good:#58d68d; --bad:#f1948a; --warn:#f5c26b; color-scheme: dark; } }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.55 "Segoe UI", system-ui, -apple-system, sans-serif; }
+.wrap { max-width: 1100px; margin: 0 auto; padding: 28px 16px 48px; }
+h1 { margin: 0 0 4px; font-size: 28px; }
+.sub { color: var(--muted); margin: 0 0 22px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+section { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+h2 { margin: 0; font-size: 18px; }
+p.help { margin: 0; color: var(--muted); font-size: 14px; }
+label { display: grid; grid-template-columns: 1fr 120px; align-items: center; gap: 10px; font-size: 14.5px; }
+input { width: 100%; padding: 7px 9px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); font: inherit; font-variant-numeric: tabular-nums; }
+input:focus { outline: 2px solid var(--acc); outline-offset: 0; }
+.out { background: var(--bg); border-radius: 10px; padding: 12px 14px; font-size: 15px; }
+.big { font-size: 26px; font-weight: 700; color: var(--acc); font-variant-numeric: tabular-nums; }
+.verdict { font-weight: 700; }
+.good { color: var(--good); } .bad { color: var(--bad); } .warn { color: var(--warn); }
+.row { display: flex; justify-content: space-between; gap: 10px; font-variant-numeric: tabular-nums; }
+footer { margin-top: 24px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>A/B Test Calculator</h1>
+  <p class="sub">Plan a test, read its result and check its traffic split. Part of the <b>ab-testing-toolkit</b> project by Mohamed Moin Peer. Same formulas as the Python package (normal approximation, two-sided, alpha 0.05).</p>
+  <div class="grid">
+    <section>
+      <h2>1 · How many visitors do I need?</h2>
+      <p class="help">Before launch: pick the smallest lift worth detecting.</p>
+      <label for="pb">Current conversion rate (%) <input id="pb" type="number" step="0.1" value="3.2"></label>
+      <label for="mde">Smallest lift to detect (%, relative) <input id="mde" type="number" step="1" value="10"></label>
+      <label for="pw">Power (%) <input id="pw" type="number" step="5" value="80"></label>
+      <label for="daily">Visitors per day in the test <input id="daily" type="number" step="100" value="7143"></label>
+      <div class="out" id="planOut"></div>
+    </section>
+    <section>
+      <h2>2 · Is my result significant?</h2>
+      <p class="help">After the planned end date: enter visitors and conversions.</p>
+      <label for="nc">Control visitors <input id="nc" type="number" value="50257"></label>
+      <label for="xc">Control conversions <input id="xc" type="number" value="1655"></label>
+      <label for="nt">Treatment visitors <input id="nt" type="number" value="49743"></label>
+      <label for="xt">Treatment conversions <input id="xt" type="number" value="1792"></label>
+      <div class="out" id="sigOut"></div>
+    </section>
+    <section>
+      <h2>3 · Is the traffic split healthy?</h2>
+      <p class="help">Sample ratio mismatch check. A failure means the test is broken.</p>
+      <label for="sc">Control users <input id="sc" type="number" value="49939"></label>
+      <label for="st">Treatment users <input id="st" type="number" value="48165"></label>
+      <label for="exp">Planned share in treatment (%) <input id="exp" type="number" value="50"></label>
+      <div class="out" id="srmOut"></div>
+    </section>
+  </div>
+  <footer>Examples are pre-filled with the synthetic "checkout redesign" and "unit price display" experiments from the project. Educational tool; results use the normal approximation and need reasonably large samples.</footer>
+</div>
+<script>
+// Standard normal CDF (Zelen & Severo) and inverse (Acklam)
+function cdf(z) { const t = 1 / (1 + 0.2316419 * Math.abs(z)); const d = 0.3989423 * Math.exp(-z * z / 2);
+  const p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274)))); return z > 0 ? 1 - p : p; }
+function inv(p) { const a = [-39.6968302866538, 220.946098424521, -275.928510446969, 138.357751867269, -30.6647980661472, 2.50662827745924],
+  b = [-54.4760987982241, 161.585836858041, -155.698979859887, 66.8013118877197, -13.2806815528857],
+  c = [-0.00778489400243029, -0.322396458041136, -2.40075827716184, -2.54973253934373, 4.37466414146497, 2.93816398269878],
+  d = [0.00778469570904146, 0.32246712907004, 2.445134137143, 3.75440866190742]; const pl = 0.02425;
+  if (p < pl) { const q = Math.sqrt(-2 * Math.log(p)); return (((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5]) / ((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1); }
+  if (p > 1 - pl) { const q = Math.sqrt(-2 * Math.log(1 - p)); return -(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5]) / ((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1); }
+  const q = p - 0.5, r = q * q; return (((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*q / (((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1); }
+const $ = id => document.getElementById(id), v = id => parseFloat($(id).value);
+const fmt = n => n.toLocaleString("en-GB");
+
+function plan() {
+  const p1 = v("pb") / 100, p2 = p1 * (1 + v("mde") / 100), za = inv(0.975), zb = inv(v("pw") / 100);
+  if (!(p1 > 0 && p2 < 1 && p2 > p1 && zb > -5)) { $("planOut").textContent = "Enter a rate between 0 and 100% and a positive lift."; return; }
+  const n = Math.ceil((za + zb) ** 2 * (p1 * (1 - p1) + p2 * (1 - p2)) / (p2 - p1) ** 2);
+  const days = Math.max(7, Math.ceil(Math.ceil(2 * n / v("daily")) / 7) * 7);
+  $("planOut").innerHTML = `<div class="big">${fmt(n)}</div>visitors per group (${fmt(2 * n)} total) to detect ${(p1*100).toFixed(2)}% → ${(p2*100).toFixed(2)}%.<br>
+    About <b>${days} days</b>, rounded up to whole weeks. Decide this before launch and do not stop early.`;
+}
+function sig() {
+  const nc = v("nc"), xc = v("xc"), nt = v("nt"), xt = v("xt");
+  if (!(nc > 0 && nt > 0 && xc >= 0 && xt >= 0 && xc <= nc && xt <= nt)) { $("sigOut").textContent = "Conversions must be between 0 and visitors."; return; }
+  const pc = xc / nc, pt = xt / nt, pool = (xc + xt) / (nc + nt);
+  const z = (pt - pc) / Math.sqrt(pool * (1 - pool) * (1 / nc + 1 / nt)), p = 2 * (1 - cdf(Math.abs(z)));
+  const se = Math.sqrt(pc * (1 - pc) / nc + pt * (1 - pt) / nt), d = pt - pc;
+  const lo = (d - 1.96 * se) / pc * 100, hi = (d + 1.96 * se) / pc * 100;
+  const verdict = p < 0.05 ? (d > 0 ? `<span class="verdict good">Significant improvement</span>` : `<span class="verdict bad">Significantly worse</span>`)
+                           : `<span class="verdict warn">Not significant</span>`;
+  $("sigOut").innerHTML = `${verdict}<div class="row"><span>Control</span><b>${(pc*100).toFixed(2)}%</b></div>
+    <div class="row"><span>Treatment</span><b>${(pt*100).toFixed(2)}%</b></div>
+    <div class="row"><span>Relative change</span><b>${(d/pc*100).toFixed(1)}%</b></div>
+    <div class="row"><span>95% CI (relative)</span><b>${lo.toFixed(1)}% to ${hi.toFixed(1)}%</b></div>
+    <div class="row"><span>p-value</span><b>${p < 0.0001 ? "< 0.0001" : p.toFixed(4)}</b></div>`;
+}
+function srm() {
+  const a = v("sc"), b = v("st"), s = v("exp") / 100, n = a + b;
+  if (!(a > 0 && b > 0 && s > 0 && s < 1)) { $("srmOut").textContent = "Enter both group sizes and a share between 0 and 100."; return; }
+  const ea = n * (1 - s), eb = n * s, chi = (a - ea) ** 2 / ea + (b - eb) ** 2 / eb, p = 2 * (1 - cdf(Math.sqrt(chi)));
+  const bad = p < 0.001;
+  $("srmOut").innerHTML = `<span class="verdict ${bad ? "bad" : "good"}">${bad ? "Mismatch: do not trust this test" : "Split looks healthy"}</span>
+    <div class="row"><span>Observed share in treatment</span><b>${(b / n * 100).toFixed(2)}%</b></div>
+    <div class="row"><span>Chi-square p-value</span><b>${p < 1e-6 ? p.toExponential(1) : p.toFixed(4)}</b></div>
+    <p class="help">Threshold p &lt; 0.001. A mismatch usually means a tracking, redirect or bot-filter bug.</p>`;
+}
+document.querySelectorAll("input").forEach(i => i.addEventListener("input", () => { plan(); sig(); srm(); }));
+plan(); sig(); srm();
+</script>
+</body>
+</html>
